@@ -1,0 +1,73 @@
+// This is the URL of the API that will give you the TVL of Union Protocol
+let url = `https://api.llama.fi/protocol/vega-protocol`;
+
+
+// Fetch the data
+let req = new Request(url);
+let json = await req.loadJSON();
+
+
+// Define the chains to include in the TVL calculation (once vega is multichain, this could be a list)
+let chains = ["Ethereum"];
+
+
+// Get the TVL and the 24-hour change in TVL from the specified chains
+let tvlToday = 0;
+let tvlYesterday = 0;
+for (let chain of chains) {
+  if (json.chainTvls[chain]) {
+    let tvlData = json.chainTvls[chain].tvl;
+    tvlToday += tvlData[tvlData.length - 1].totalLiquidityUSD / 1000;
+    tvlYesterday += tvlData[tvlData.length - 2].totalLiquidityUSD / 1000;
+  }
+}
+let tvlChange = tvlToday - tvlYesterday;
+
+
+// Format the TVL and the change to show as $123.6k
+let tvlFormatted = `$${tvlToday.toFixed(1)}k`;
+let tvlChangeFormatted = tvlChange >= 0 ? `+$${tvlChange.toFixed(1)}k` : `-$${Math.abs(tvlChange).toFixed(1)}k`;
+
+
+// Create widget
+let widget = new ListWidget();
+let gradient = new LinearGradient();
+gradient.locations = [0, 0.8226];
+gradient.colors = [new Color("#DFFF0B"), new Color("#00000")];
+widget.backgroundGradient = gradient;
+
+
+// Add title
+let titleText = widget.addText('Vega TVL');
+titleText.textColor = new Color("#00000");
+titleText.font = new Font('SF Pro Rounded', 18);
+titleText.textOpacity = 0.7;
+
+
+widget.addSpacer();
+
+
+// Create and customize the TVL text
+let tvlText = widget.addText(tvlFormatted);
+tvlText.textColor = new Color("#FFFFFF");
+tvlText.font = new Font('SF Pro Rounded', 32);
+
+
+// Create and customize the TVL change text
+let tvlChangeText = widget.addText(`24hr: ${tvlChangeFormatted}`);
+tvlChangeText.textColor = new Color("#FFFFFF");
+tvlChangeText.font = new Font('SF Pro Rounded', 16);
+tvlChangeText.textOpacity = 0.7;
+
+
+// Display widget
+if (config.runsInWidget) {
+  // Runs inside a widget so add it to the homescreen widget
+  Script.setWidget(widget);
+} else {
+  // Show the medium widget inside the app
+  widget.presentMedium();
+}
+
+
+Script.complete();
